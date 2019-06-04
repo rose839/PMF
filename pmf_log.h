@@ -12,6 +12,7 @@ typedef enum _plog_level {
 };
 
 #define PLOG_LEVEL_MASK 7
+#define PLOG_HAVE_ERRNO 0x100
 
 #define plog(flags, ...) plog_ex(__func__, __LINE__, flags, __VA_ARGS__)
 
