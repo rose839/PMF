@@ -4,7 +4,7 @@
 #define PMF_CONF_H
 
 /* global configuration */
-struct pmf_global_config_s {
+typedef struct _pmf_global_config_s {
 	char *pid_file;
 	char *error_log;
 	int log_level;
@@ -17,19 +17,30 @@ struct pmf_global_config_s {
 	int rlimit_files;
 	int rlimit_core;
 	char *event_mechanism;
-};
+}PMF_GLOBAL_CONFIG_S;
+
+typedef enum _pm_type_e{
+	PM_STYLE_STATIC = 1,
+	PM_STYLE_DYNAMIC = 2,
+	PM_STYLE_ONDEMAND = 3
+}PM_TYPE_E;
 
 /* worker pool configuration */
-struct pmf_worker_pool_config_s {
+typedef struct _pmf_worker_pool_config_s {
 	char *name;
 	char *prefix;
 	char *user;
 	char *group;
 	char *listen_address;
 	int process_priority;
-	int pm;
-	
-};
+	PM_TYPE_E pm_type;
+	int pm_max_children;
+	int pm_start_servers;
+	int pm_min_spare_servers;
+	int pm_max_spare_servers;
+	int pm_process_idle_timeout;
+	int pm_max_request;
+}PMF_WORKER_POOL_CONFIG_S;
 
 #endif
 
