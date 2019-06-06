@@ -2,11 +2,15 @@
 #ifndef PMF_EVENTS_H
 #define PMF_EVENTS_H
 
+/* event type */
 #define PMF_EV_TIMEOUT (1 << 0)
 #define PMF_EV_READ    (1 << 1)
 
 typedef struct _pmf_event_s {
-	
+	int fd;
+	void (*callback)(struct _pmf_event_s *event, int event_type, void *arg);
+	void *arg;
+	int event_type;
 }PMF_EVENT_S;
 
 typedef struct _pmf_event_queue_s {
