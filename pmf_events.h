@@ -6,10 +6,15 @@
 #define PMF_EV_TIMEOUT (1 << 0)
 #define PMF_EV_READ    (1 << 1)
 
+/* event flag */
+#define PMF_EV_LEVEL_TRIGGER (1 << 0)
+#define PMF_EV_EDGE_TRIGGER  (1 << 1)
+
 typedef struct _pmf_event_s {
 	int fd;
 	void (*callback)(struct _pmf_event_s *event, int event_type, void *arg);
 	void *arg;
+	int flags;
 	int event_type;
 }PMF_EVENT_S;
 
@@ -28,5 +33,7 @@ typedef struct _pmf_event_module_s {
 	int (*add)(PMF_EVENT_S *ev);
 	int (*remove)(PMF_EVENT_S *ev);
 }PMF_EVENT_MODULE_S;
+
+void pmf_event_proc(PMF_EVENT_S *ev);
 
 #endif
