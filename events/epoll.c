@@ -62,3 +62,66 @@ static int pmf_event_epoll_clean() {
 
 	return -1;
 }
+
+static int pmf_event_epoll_wait(PMF_EVENT_QUEUE_S *queue, unsigned long timeout) {
+	int ret, i;
+
+	memset(event_buf, 0, sizeof(struct epoll_event) * event_buf_num);
+
+	ret = epoll_wait(epollfd, epoll_fd, event_buf, timeout);
+	if (ret == -1) {
+
+		if (errno != EINTR) {
+			plog(PLOG_WARNING, "epoll_wait() returns %d", errno);
+			return -1;
+		}
+	}
+
+	for (i = 0; i < ret; i++) {
+
+		if (!event_buf[i].data.ptr) {
+			continue;
+		}
+
+		pmf_event_proc((PMF_EVENT_S *)event_buf[i].data.ptr);
+	}
+
+	return ret;
+}
+
+static int pmf_event_epol_add(PMF_EVENT_S *event) {
+	struct epoll_event e;
+
+	e.events = EPOLLIN;
+	e.data.ptr = (void *)event;
+
+	if (event->flags & PMF_EV_EDGE_TRIGGER) {
+		e.events |= EPOLLET;
+	}
+
+	if (-1 == epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event->fd, &e)) {
+		plog(PLOG_ERROR, "epoll: unable to add fd %d", event->fd);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int pmf_event_epol_remove(PMF_EVENT_S *event) {
+	struct epoll_event e;
+
+	e.events = EPOLLIN;
+	e.data.ptr = (void *)event;
+
+	if (event->flags & PMF_EV_EDGE_TRIGGER) {
+		e.events |= EPOLLET;
+	}
+
+	if (-1 == epoll_ctl(epoll_fd, EPOLL_CTL_DEL, event->fd, &e)) {
+		plog(PLOG_ERROR, "epoll: unable to remove fd %d", event->fd);
+		return -1;
+	}
+
+	return 0;
+}
+
