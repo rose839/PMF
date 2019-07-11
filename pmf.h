@@ -8,6 +8,11 @@
 /* structure in every process */
 typedef struct _pmf_global_s {
 	pid_t parent_pid;
+	int argc;
+	char **argv;
+	int runing_children_num;
+	int error_log_fd;
+	int log_level;
 	int is_child;
 	int listening_socket; /* this child */
 	int max_requests;     /* this child */

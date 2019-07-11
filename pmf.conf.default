@@ -10,7 +10,7 @@
 [global]
 ; Pid file
 ; Default Value: /var/run/pmf.pid
-;pid = /var/run/pmf.pid
+;pid_file = /var/run/pmf.pid
 
 ; Error log file
 ; If it's set to "syslog", log is sent to syslogd instead of being written

@@ -42,5 +42,20 @@ typedef struct _pmf_worker_pool_config_s {
 	int pm_max_request;
 }PMF_WORKER_POOL_CONFIG_S;
 
+/* this struct is used for parse key-value in ini file */
+typedef struct _ini_value_parser_s {
+	char *key;
+	int offset;
+	char*(*parser)(char *value, void **config, int offset);
+}INI_VALUE_PARSER_S;
+
+#define PMF_CONF_FILE "/etc/pmf.conf"
+#define GO(field) offsetof(PMF_GLOBAL_CONFIG_S, field)
+#define WPO(field) offsetof(PMF_WORKER_POOL_CONFIG_S, field)
+
+extern PMF_GLOBAL_CONFIG_S pmf_global_config;
+
+extern int pmf_conf_init_main();
+
 #endif
 
