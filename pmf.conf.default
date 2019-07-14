@@ -18,19 +18,6 @@
 ; Default Value: /var/log/pmf.log
 ;error_log = /var/log/pmf.log
 
-; syslog_facility is used to specify what type of program is logging the
-; message. This lets syslogd specify that messages from different facilities
-; will be handled differently.
-; See syslog(3) for possible values (ex daemon equiv LOG_DAEMON)
-; Default Value: daemon
-;syslog.facility = daemon
-
-; syslog_ident is prepended to every message. If you have multiple PMF
-; instances running on the same server, you can change the default value
-; which must suit common needs.
-; Default Value: pmf
-;syslog.ident = pmf
-
 ; Log level
 ; Possible Values: alert, error, warning, notice, debug
 ; Default Value: notice
@@ -94,13 +81,7 @@
 ; Default Value: not set (auto detection)
 ;events.mechanism = epoll
 
-; When PMF is built with systemd integration, specify the interval,
-; in seconds, between health report notification to systemd.
-; Set to 0 to disable.
-; Available Units: s(econds), m(inutes), h(ours)
-; Default Unit: seconds
-; Default value: 10
-;systemd_interval = 10
+
 
 ;;;;;;;;;;;;;;;;;;;;
 ; Pool Definitions ;
@@ -111,9 +92,8 @@
 ; used in logs and stats. There is no limitation on the number of pools which
 ; PMF can handle. Your system will tell you anyway :)
 
-; Include one or more files. If glob(3) exists, it is used to include a bunch of
-; files from a glob(3) pattern. This directive can be used everywhere in the
-; file.
-; Relative path can also be used. They will be prefixed by:
-;  - the global prefix if it's been set (-p argument)
-include=pmf.d/*.conf
+; All files in specified directory will be included.
+include=/etc/pmf.d/
+
+; You can also define pool below as you wish.
+; [example]

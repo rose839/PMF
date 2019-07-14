@@ -50,6 +50,7 @@ typedef struct _ini_value_parser_s {
 }INI_VALUE_PARSER_S;
 
 #define PMF_CONF_FILE "/etc/pmf.conf"
+#define MAX_KEY_VALUE_LEN  128UL
 #define GO(field) offsetof(PMF_GLOBAL_CONFIG_S, field)
 #define WPO(field) offsetof(PMF_WORKER_POOL_CONFIG_S, field)
 
