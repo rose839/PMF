@@ -232,6 +232,29 @@ static int pmf_conf_parse_global_ini(dictionary *ini) {
 	
 }
 
+static void pmf_conf_dump() /* {{{ */
+{
+	plog(PLOG_NOTICE, "[global]");
+	plog(PLOG_NOTICE, "\tpid = %s",                         STR2STR(pmf_global_config.pid_file));
+	plog(PLOG_NOTICE, "\terror_log = %s",                   STR2STR(pmf_global_config.error_log));
+	plog(PLOG_NOTICE, "\tlog_level = %s",                   plog_get_level_name(pmf_global_config.log_level));
+	plog(PLOG_NOTICE, "\temergency_restart_interval = %ds", pmf_global_config.emergency_restart_interval);
+	plog(PLOG_NOTICE, "\temergency_restart_threshold = %d", pmf_global_config.emergency_restart_threshold);
+	plog(PLOG_NOTICE, "\tprocess_control_timeout = %ds",    pmf_global_config.process_control_timeout);
+	plog(PLOG_NOTICE, "\tprocess.max = %d",                 pmf_global_config.process_max);
+	if (pmf_global_config.process_priority == 64) {
+		plog(PLOG_NOTICE, "\tprocess.priority = undefined");
+	} else {
+		plog(PLOG_NOTICE, "\tprocess.priority = %d", pmf_global_config.process_priority);
+	}
+	plog(PLOG_NOTICE, "\tdaemonize = %s",                   BOOL2STR(pmf_global_config.daemonize));
+	plog(PLOG_NOTICE, "\trlimit_files = %d",                pmf_global_config.rlimit_files);
+	plog(PLOG_NOTICE, "\trlimit_core = %d",                 pmf_global_config.rlimit_core);
+	plog(PLOG_NOTICE, "\tevents.mechanism = %s",            pmf_global_config.event_mechanism);
+	plog(PLOG_NOTICE, " ");
+}
+
+
 static int pmf_conf_load_conf_file() {
 	dictionary *ini;
 	int ret = 0;
@@ -242,7 +265,7 @@ static int pmf_conf_load_conf_file() {
 		return -1;
 	}
 
-	if (0 > pmf_conf_parse_ini(ini)) {
+	if (0 > pmf_conf_parse_global_ini(ini)) {
 		plog(PLOG_ERROR, "parse ini file failed!");
 		return -1;
 	}
@@ -259,5 +282,6 @@ int pmf_conf_init_main() {
 		return -1;
 	}
 
+	pmf_conf_dump();
 	return ret;
 }
