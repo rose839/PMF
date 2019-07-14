@@ -7,8 +7,6 @@
 
 PMF_GLOBAL_S pmf_globals = {
 	.parent_pid = 0,
-	.argc = 0,
-	.argv = NULL,
 	.running_children_num = 0,
 	.error_log_fd = 0,
 	.log_level = 0,

@@ -1,22 +1,28 @@
 #include "pmf_conf.h"
 #include "pmf_log.h"
 #include "pmf_events.h"
-#include "pmf_log.h"
 #include "iniparser.h"
 
+static char *pmf_config_set_string(char *value, void **config, int offset);
+static char *pmf_conf_set_log_level(char *value, void **config, int offset);
+static char *pmf_conf_set_integer(char *value, void **config, int offset);
+static char *pmf_conf_set_time(char *value, void **config, int offset);
+static char *fpm_conf_set_boolean(char *value, void **config, int offset);
+static char *pmf_conf_set_rlimit_core(char *value, void **config, int offset);
+
 static INI_VALUE_PARSER_S pmf_ini_global_option[] = {
-	{"pid_file",                    pmf_config_set_string,  GO(pid_file)},
-	{"error_log",                   pmf_config_set_string,  GO(error_log)},
-	{"log_level",                   pmf_conf_set_log_level, GO(log_level)},
-	{"emergency_restart_threshold", pmf_conf_set_integer,   GO(emergency_restart_threshold)},
-	{"emergency_restart_interval",  pmf_conf_set_time,      GO(emergency_restart_interval)},
-	{"process_control_timeout",     pmf_conf_set_time,      GO(process_control_timeout)},
-	{"process.max",                 pmf_conf_set_integer,   GO(process_max)},
-	{"process.priority",            pmf_conf_set_integer,   GO(process_priority)},
-	{"daemonize",                   fpm_conf_set_boolean,   GO(daemonize)},
-	{"rlimit_files",                pmf_conf_set_integer,   GO(rlimit_files)},
-	{"rlimit_core",                 pmf_conf_set_integer,   GO(rlimit_core)},
-	{"events.mechanism",            pmf_conf_set_integer,   GO(event_mechanism)},
+	{"pid_file",                    pmf_config_set_string,    GO(pid_file)},
+	{"error_log",                   pmf_config_set_string,    GO(error_log)},
+	{"log_level",                   pmf_conf_set_log_level,   GO(log_level)},
+	{"emergency_restart_threshold", pmf_conf_set_integer,     GO(emergency_restart_threshold)},
+	{"emergency_restart_interval",  pmf_conf_set_time,        GO(emergency_restart_interval)},
+	{"process_control_timeout",     pmf_conf_set_time,        GO(process_control_timeout)},
+	{"process.max",                 pmf_conf_set_integer,     GO(process_max)},
+	{"process.priority",            pmf_conf_set_integer,     GO(process_priority)},
+	{"daemonize",                   fpm_conf_set_boolean,     GO(daemonize)},
+	{"rlimit_files",                pmf_conf_set_integer,     GO(rlimit_files)},
+	{"rlimit_core",                 pmf_conf_set_rlimit_core, GO(rlimit_core)},
+	{"events.mechanism",            pmf_config_set_string,    GO(event_mechanism)},
 };
 
 static INI_VALUE_PARSER_S pmf_ini_pool_option[] = {
@@ -86,8 +92,7 @@ static char *pmf_config_set_string(char *value, void **config, int offset) {
 	return NULL;
 }
 
-static char *pmf_conf_set_log_level(char *value, void **config, int offset)
-{
+static char *pmf_conf_set_log_level(char *value, void **config, int offset) {
 	int log_level;
 
 	if (!strcasecmp(value, "debug")) {
@@ -108,8 +113,7 @@ static char *pmf_conf_set_log_level(char *value, void **config, int offset)
 	return NULL;
 }
 
-static char *pmf_conf_set_integer(char *value, void **config, int offset)
-{
+static char *pmf_conf_set_integer(char *value, void **config, int offset) {
 	char *p;
 	
 	for (p = value; *p; p++) {
@@ -121,8 +125,33 @@ static char *pmf_conf_set_integer(char *value, void **config, int offset)
 	return NULL;
 }
 
-static char *pmf_conf_set_time(char *value, void **config, int offset)
-{
+static char *pmf_conf_set_rlimit_core(char *value, void **config, int offset) {
+	int *ptr = (int *) ((char *) *config + offset);
+
+	if (!strcasecmp(value, "unlimited")) {
+		*ptr = -1;
+	} else {
+		int int_value;
+		void *subconf = &int_value;
+		char *error;
+
+		error = pmf_conf_set_integer(value, &subconf, 0);
+
+		if (error) {
+			return error;
+		}
+
+		if (int_value < 0) {
+			return "must be greater than zero or 'unlimited'";
+		}
+
+		*ptr = int_value;
+	}
+
+	return NULL;
+}
+
+static char *pmf_conf_set_time(char *value, void **config, int offset) {
 	int len = strlen(value);
 	char suffix;
 	int seconds;
@@ -159,8 +188,7 @@ static char *pmf_conf_set_time(char *value, void **config, int offset)
 	return NULL;
 }
 
-static char *fpm_conf_set_boolean(char *value, void **config, int offset)
-{
+static char *fpm_conf_set_boolean(char *value, void **config, int offset) {
 	long value_y = !strcasecmp(val, "yes");
 	long value_n = !strcasecmp(val, "no");
 
@@ -253,7 +281,6 @@ static void pmf_conf_dump() /* {{{ */
 	plog(PLOG_NOTICE, "\tevents.mechanism = %s",            pmf_global_config.event_mechanism);
 	plog(PLOG_NOTICE, " ");
 }
-
 
 static int pmf_conf_load_conf_file() {
 	dictionary *ini;

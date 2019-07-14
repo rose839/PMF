@@ -6,7 +6,6 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <errno.h>
-
 #include "pmf.h"
 #include "pmf_log.h"
 
@@ -34,6 +33,7 @@ const char* plog_get_level_name(int log_level) {
 
 	return level_names[log_level];
 }
+
 size_t plog_print_time(struct timeval *tv, char *timebuf, size_t timebuf_len) {
 	size_t len;
 
