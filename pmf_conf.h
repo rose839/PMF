@@ -3,6 +3,8 @@
 #ifndef PMF_CONF_H
 #define PMF_CONF_H
 
+#include <stddef.h>
+
 /* global configuration */
 typedef struct _pmf_global_config_s {
 	char *pid_file;
@@ -13,7 +15,7 @@ typedef struct _pmf_global_config_s {
 	int process_control_timeout;
 	int process_max;
 	int process_priority;
-	int deamonize;
+	int daemonize;
 	int rlimit_files;
 	int rlimit_core;
 	char *event_mechanism;
@@ -45,8 +47,8 @@ typedef struct _pmf_worker_pool_config_s {
 /* this struct is used for parse key-value in ini file */
 typedef struct _ini_value_parser_s {
 	char *key;
-	int offset;
 	char*(*parser)(char *value, void **config, int offset);
+	int offset;
 }INI_VALUE_PARSER_S;
 
 #define PMF_CONF_FILE "/etc/pmf.conf"

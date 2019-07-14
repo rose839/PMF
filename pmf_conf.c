@@ -50,15 +50,17 @@ static int pmf_conf_expand_pool_name(char **value) {
 		char *p2 = token + strlen("$pool");
 
 		/* If we are not in a pool, we cannot expand this name now */
+		/*
 		if (!current_wp || !current_wp->config  || !current_wp->config->name) {
 			return -1;
 		}
+		*/
 
 		/* "aaa$poolbbb" becomes "aaa\0oolbbb" */
 		token[0] = '\0';
 
 		/* Build a brand new string with the expanded token */
-		vsnprintf(buf, MAX_KEY_VALUE_LEN, "%s%s%s", *value, current_wp->config->name, p2);
+		snprintf(buf, MAX_KEY_VALUE_LEN, "%s%s%s", *value, /*current_wp->config->name*/ "pool", p2);
 
 		/* Free the previous value and save the new one */
 		free(*value);
@@ -189,8 +191,8 @@ static char *pmf_conf_set_time(char *value, void **config, int offset) {
 }
 
 static char *fpm_conf_set_boolean(char *value, void **config, int offset) {
-	long value_y = !strcasecmp(val, "yes");
-	long value_n = !strcasecmp(val, "no");
+	long value_y = !strcasecmp(value, "yes");
+	long value_n = !strcasecmp(value, "no");
 
 	if (!value_y && !value_n) {
 		return "invalid boolean value";
@@ -206,7 +208,7 @@ static int pmf_conf_parse_global_ini(dictionary *ini) {
 	char *value;
 	int section_count;
 	char real_key[MAX_KEY_VALUE_LEN];
-	int ret = 0;
+	const char *ret;
 
 	/* get global option */
 	for (index = 0; index < sizeof(pmf_ini_global_option)/sizeof(INI_VALUE_PARSER_S); index++) {
@@ -216,9 +218,9 @@ static int pmf_conf_parse_global_ini(dictionary *ini) {
 		value = iniparser_getstring(ini, real_key, NULL);
 		if (NULL != value) {
 			ret = pmf_ini_global_option[index].parser(value, &pmf_global_config, pmf_ini_global_option[index].offset);
-			if (0 > ret) {
-				plog(PLOG_ERROR, "global option '%s' parse failed!", pmf_ini_global_option[index].key);
-				return ret;
+			if (NULL != ret) {
+				plog(PLOG_ERROR, "global option '%s' parse failed: %s.", pmf_ini_global_option[index].key, ret);
+				return -1;
 			}
 		} else {
 			plog(PLOG_NOTICE, "global option '%s' doesn't config.", pmf_ini_global_option[index].key);
@@ -232,7 +234,7 @@ static int pmf_conf_parse_global_ini(dictionary *ini) {
 		return -1;
 	}
 	while (section_count > 0) {
-		char *section_name = iniparser_getsecname(ini, section_count);
+		const char *section_name = iniparser_getsecname(ini, section_count);
 
 		if (0 == strcmp(section_name, "global")) {
 			section_count--;
@@ -246,9 +248,9 @@ static int pmf_conf_parse_global_ini(dictionary *ini) {
 			value = iniparser_getstring(ini, real_key, NULL);
 			if (NULL != value) {
 				ret = pmf_ini_pool_option[index].parser(value, &pmf_global_config, pmf_ini_pool_option[index].offset);
-				if (0 > ret) {
-					plog(PLOG_ERROR, "section '%s' option '%s' parse failed!", , pmf_ini_pool_option[index].key);
-					return ret;
+				if (NULL != ret) {
+					plog(PLOG_ERROR, "section '%s' option '%s' parse failed!", pmf_ini_pool_option[index].key);
+					return -1;
 				}
 			} else {
 				plog(PLOG_NOTICE, "section '%s' option '%s' doesn't config.", pmf_ini_pool_option[index].key);
@@ -257,7 +259,8 @@ static int pmf_conf_parse_global_ini(dictionary *ini) {
 		
 		section_count--;
 	}
-	
+
+	return 0;
 }
 
 static void pmf_conf_dump() /* {{{ */
