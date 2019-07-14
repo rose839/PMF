@@ -1,7 +1,7 @@
-
+#include "pmf_conf.h"
 #include "pmf_log.h"
 #include "pmf_events.h"
-#include "plog.h"
+#include "pmf_log.h"
 #include "iniparser.h"
 
 static INI_VALUE_PARSER_S pmf_ini_global_option[] = {

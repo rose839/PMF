@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -16,7 +15,7 @@ int pmf_stdio_init_main() {
 	}
 
 	if (0 > dup2(fd, STDIN_FILENO) || 0 > dup2(fd, STDOUT_FILENO)) {
-		zlog(ZLOG_SYSERROR, "failed to init stdio: dup2()");
+		plog(PLOG_SYSERROR, "failed to init stdio: dup2()");
 		close(fd);
 		return -1;
 	}
