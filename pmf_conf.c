@@ -1,10 +1,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
+#include "pmf.h"
 #include "pmf_conf.h"
 #include "pmf_log.h"
 #include "pmf_events.h"
 #include "pmf_sockets.h"
+#include "pmf_worker_pool.h"
 #include "iniparser.h"
 
 static char *pmf_config_set_string(const char *value, void **config, int offset);
@@ -13,6 +16,7 @@ static char *pmf_conf_set_integer(const char *value, void **config, int offset);
 static char *pmf_conf_set_time(const char *value, void **config, int offset);
 static char *fpm_conf_set_boolean(const char *value, void **config, int offset);
 static char *pmf_conf_set_rlimit_core(const char *value, void **config, int offset);
+static char *pmf_conf_set_pm(const char *value, void **config, int offset);
 
 static INI_VALUE_PARSER_S pmf_ini_global_option[] = {
 	{"pid_file",                    pmf_config_set_string,      GO(pid_file)},
@@ -43,7 +47,7 @@ static INI_VALUE_PARSER_S pmf_ini_pool_option[] = {
 	{"pm.min_spare_servers",        pmf_conf_set_integer,     WPO(pm_min_spare_servers)},
 	{"pm.max_spare_servers",        pmf_conf_set_integer,     WPO(pm_max_spare_servers)},
 	{"pm.process_idle_timeout",     pmf_conf_set_integer,     WPO(pm_process_idle_timeout)},
-	{"pm.max_requests",             pmf_conf_set_integer,     WPO(pm_max_request)},
+	{"pm.max_requests",             pmf_conf_set_integer,     WPO(pm_max_requests)},
 };
 
 PMF_GLOBAL_CONFIG_S pmf_global_config = {
@@ -228,7 +232,7 @@ static char *fpm_conf_set_boolean(const char *value, void **config, int offset) 
 	return NULL;
 }
 
-static char *pmf_conf_set_pm(char *value, void **config, int offset) {
+static char *pmf_conf_set_pm(const char *value, void **config, int offset) {
 	int *ptr = (int *) ((char *) *config + offset);
 
 	if (!strcasecmp(value, "static")) {
@@ -332,7 +336,7 @@ static int pmf_conf_parse_pool_ini(dictionary *ini) {
 		}
 		wp_config->name = strdup(section_name);
 		if (!wp_config->name) {
-			plog(ZLOG_ERROR, "Unable to alloc memory for configuration name for worker '%s'", section_name);
+			plog(PLOG_ERROR, "Unable to alloc memory for configuration name for worker '%s'", section_name);
 			return -1;
 		}
 
@@ -485,7 +489,6 @@ static void pmf_conf_dump() /* {{{ */
 	plog(PLOG_NOTICE, "\t\tevents.mechanism = %s",            STR2STR(pmf_global_config.event_mechanism));
 
 	for (wp = pmf_worker_all_pools; wp; wp = wp->next) {
-		struct key_value_s *kv;
 		if (!wp->config) continue;
 		plog(PLOG_NOTICE, "[%s]",                              STR2STR(wp->config->name));
 		plog(PLOG_NOTICE, "\tuser = %s",                       STR2STR(wp->config->user));
@@ -498,7 +501,7 @@ static void pmf_conf_dump() /* {{{ */
 			plog(PLOG_NOTICE, "\tprocess.priority = %d", wp->config->process_priority);
 		}
 		plog(PLOG_NOTICE, "\tprocess.dumpable = %s",           BOOL2STR(wp->config->process_dumpable));
-		plog(PLOG_NOTICE, "\tpm = %s",                         PM2STR(wp->config->pm));
+		plog(PLOG_NOTICE, "\tpm = %s",                         PM2STR(wp->config->pm_type));
 		plog(PLOG_NOTICE, "\tpm.max_children = %d",            wp->config->pm_max_children);
 		plog(PLOG_NOTICE, "\tpm.start_servers = %d",           wp->config->pm_start_servers);
 		plog(PLOG_NOTICE, "\tpm.min_spare_servers = %d",       wp->config->pm_min_spare_servers);
@@ -587,7 +590,7 @@ static int pmf_conf_proc_config() {
 		return -1;
 	}
 
-	if (0 > pmf_event_pre_init(pmf_global_config.events_mechanism)) {
+	if (0 > pmf_event_pre_init(pmf_global_config.event_mechanism)) {
 		return -1;
 	}
 

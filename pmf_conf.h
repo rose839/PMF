@@ -43,7 +43,7 @@ typedef struct _pmf_worker_pool_config_s {
 	int pm_min_spare_servers;
 	int pm_max_spare_servers;
 	int pm_process_idle_timeout;
-	int pm_max_request;
+	int pm_max_requests;
 }PMF_WORKER_POOL_CONFIG_S;
 
 /* this struct is used for parse key-value in ini file */
@@ -60,6 +60,10 @@ typedef struct _ini_value_parser_s {
 #define PM2STR(a) (a == PM_STYLE_STATIC ? "static" : (a == PM_STYLE_DYNAMIC ? "dynamic" : "ondemand"))
 #define GO(field) offsetof(PMF_GLOBAL_CONFIG_S, field)
 #define WPO(field) offsetof(PMF_WORKER_POOL_CONFIG_S, field)
+
+#ifndef MAX_PATH
+#define MAX_PATH 128
+#endif
 
 extern PMF_GLOBAL_CONFIG_S pmf_global_config;
 

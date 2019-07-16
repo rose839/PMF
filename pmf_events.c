@@ -1,4 +1,7 @@
 #include "pmf_events.h"
+#include "pmf_log.h"
+#include "epoll.h"
+#include "select.h"
 
 static PMF_EVENT_MODULE_S *pmf_event_module;
 

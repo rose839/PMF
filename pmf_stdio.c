@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include "pmf.h"
+#include "pmf_conf.h"
 #include "pmf_log.h"
 
 static int pmf_use_error_log() {

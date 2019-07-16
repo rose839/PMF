@@ -1,5 +1,9 @@
 #include <sys/epoll.h>
 #include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include "../pmf_events.h"
+#include "../pmf_log.h"
 
 static int pmf_event_epoll_init(int max);
 static int pmf_event_epoll_clean();
@@ -67,7 +71,7 @@ static int pmf_event_epoll_wait(PMF_EVENT_QUEUE_S *queue, unsigned long timeout)
 
 	memset(event_buf, 0, sizeof(struct epoll_event) * event_buf_num);
 
-	ret = epoll_wait(epollfd, epoll_fd, event_buf, timeout);
+	ret = epoll_wait(epoll_fd, event_buf, event_buf_num, timeout);
 	if (ret == -1) {
 
 		if (errno != EINTR) {
@@ -88,7 +92,7 @@ static int pmf_event_epoll_wait(PMF_EVENT_QUEUE_S *queue, unsigned long timeout)
 	return ret;
 }
 
-static int pmf_event_epol_add(PMF_EVENT_S *event) {
+static int pmf_event_epoll_add(PMF_EVENT_S *event) {
 	struct epoll_event e;
 
 	e.events = EPOLLIN;
@@ -106,7 +110,7 @@ static int pmf_event_epol_add(PMF_EVENT_S *event) {
 	return 0;
 }
 
-static int pmf_event_epol_remove(PMF_EVENT_S *event) {
+static int pmf_event_epoll_remove(PMF_EVENT_S *event) {
 	struct epoll_event e;
 
 	e.events = EPOLLIN;
