@@ -93,7 +93,8 @@
 ; PMF can handle. Your system will tell you anyway :)
 
 ; All files in specified directory will be included.
-include=/etc/pmf.d/
+; Default Value: not set
+; include_dir=/etc/pmf.d/
 
 ; You can also define pool below as you wish.
 ; [example]

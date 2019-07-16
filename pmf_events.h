@@ -34,6 +34,7 @@ typedef struct _pmf_event_module_s {
 	int (*remove)(PMF_EVENT_S *ev);
 }PMF_EVENT_MODULE_S;
 
-void pmf_event_proc(PMF_EVENT_S *ev);
+extern int pmf_event_pre_init(const char *mechanism);
+extern void pmf_event_proc(PMF_EVENT_S *ev);
 
 #endif

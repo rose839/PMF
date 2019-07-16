@@ -14,6 +14,7 @@ enum _plog_level {
 #define PLOG_LEVEL_MASK 7
 #define PLOG_HAVE_ERRNO 0x100
 #define PLOG_SYSERROR (PLOG_ERROR | PLOG_HAVE_ERRNO)
+#define PMF_ERROR_LOG_FILE_DEFAULT "/var/log/pmf.log"
 
 #if defined(__GUNC__) && __GUNC__ >= 4
 #define PLOG_IGNORE_RET(x) (({ __typeof__ (x) __x = (x); (void)__x;}))

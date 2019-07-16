@@ -19,4 +19,10 @@ typedef struct _pmf_worker_pool_s {
 	PMF_SCOREBOARD_S *scoreboard;
 }PMF_WORKER_POOL_S;
 
+extern PMF_WORKER_POOL_S *pmf_worker_all_pools;
+
+extern PMF_WORKER_POOL_S *pmf_worker_pool_alloc();
+extern void pmf_worker_pool_free(PMF_WORKER_POOL_S *wp);
+extern int pmf_worker_pool_init_main();
+
 #endif
