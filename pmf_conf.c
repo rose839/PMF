@@ -556,11 +556,17 @@ int pmf_conf_write_pid() {
 	return 0;
 }
 
-static int pmf_conf_proc_config() {
-	if (pmf_global_config.pid_file && 0 > access(pmf_global_config.pid_file, F_OK)) {
-		plog(PLOG_ERROR, "pid file '%s' doesn't exist!", pmf_global_config.pid_file);
+int pmf_conf_unlink_pid() {
+	if (pmf_global_config.pid_file) {
+		if (0 > unlink(pmf_global_config.pid_file)) {
+			plog(PLOG_SYSERROR, "Unable to remove the PID file (%s).", pmf_global_config.pid_file);
+			return -1;
+		}
 	}
+	return 0;
+}
 
+static int pmf_conf_proc_config() {
 	pmf_globals.log_level = pmf_global_config.log_level;
 	plog_set_level(pmf_globals.log_level);
 

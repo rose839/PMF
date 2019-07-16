@@ -2,6 +2,9 @@
 #ifndef PMF_CHILDREN_H
 #define PMF_CHILDREN_H
 
+#include <sys/types.h>
+#include <unistd.h>
+
 typedef struct _pmf_child_s {
 	struct _pmf_child_s *prev, *next;
 	struct timeval start_time;

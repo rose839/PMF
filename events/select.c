@@ -22,14 +22,14 @@ static PMF_EVENT_MODULE_S select_module = {
 	.remove = pmf_event_select_remove,
 };
 
-static fs_set fds;
+static fd_set fds;
 
 PMF_EVENT_MODULE_S *pmf_event_select_module() {
 	return &select_module;
 	return 0;
 }
 
-static int pmf_events_select_init(int max) {
+static int pmf_event_select_init(int max) {
 	FD_ZERO(&fds);
 	return 0;
 }

@@ -1,5 +1,8 @@
+#include <stdlib.h>
+#include <string.h>
 #include "pmf_conf.h"
 #include "pmf_log.h"
+#include "pmf_worker_pool.h"
 
 PMF_WORKER_POOL_S *pmf_worker_all_pools;
 
