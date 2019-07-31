@@ -5,6 +5,10 @@
 
 static PMF_EVENT_MODULE_S *pmf_event_module;
 
+int pmf_event_support_edge_trigger() {
+	return pmf_event_module ? pmf_event_module->support_edge_trigger : 0;
+}
+
 void pmf_event_proc(PMF_EVENT_S *ev) {
 	if (!ev || !ev->callback) {
 		return;

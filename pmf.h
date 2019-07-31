@@ -13,6 +13,7 @@ typedef struct _pmf_global_s {
 	int is_child;
 	int listening_socket; /* this child */
 	int max_requests;     /* this child */
+	int send_config_pipe[2];
 }PMF_GLOBAL_S;
 
 extern PMF_GLOBAL_S pmf_globals;

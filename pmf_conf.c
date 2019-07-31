@@ -143,6 +143,7 @@ static char *pmf_conf_set_integer(const char *value, void **config, int offset) 
 	const char *p;
 	
 	for (p = value; *p; p++) {
+		if (p == value && *p == '-') continue;
 		if (*p < '0' || *p > '9') {
 			return "is not a valid number (greater or equal than zero)";
 		}
@@ -262,7 +263,7 @@ static void *pmf_worker_pool_config_alloc() {
 
 	wp = pmf_worker_pool_alloc();
 
-	if (NULL != wp) {
+	if (NULL == wp) {
 		return NULL;
 	}
 
@@ -350,11 +351,11 @@ static int pmf_conf_parse_pool_ini(dictionary *ini) {
 			if (NULL != value) {
 				ret = pmf_ini_pool_option[index].parser(value, &config, pmf_ini_pool_option[index].offset);
 				if (NULL != ret) {
-					plog(PLOG_ERROR, "section '%s' option '%s' parse failed!", pmf_ini_pool_option[index].key);
+					plog(PLOG_ERROR, "section '%s' option '%s' parse failed!", section_name, pmf_ini_pool_option[index].key);
 					return -1;
 				}
 			} else {
-				plog(PLOG_NOTICE, "section '%s' option '%s' doesn't config.", pmf_ini_pool_option[index].key);
+				plog(PLOG_NOTICE, "section '%s' option '%s' doesn't config.", section_name, pmf_ini_pool_option[index].key);
 			}
 		}
 		
@@ -491,23 +492,23 @@ static void pmf_conf_dump() /* {{{ */
 	for (wp = pmf_worker_all_pools; wp; wp = wp->next) {
 		if (!wp->config) continue;
 		plog(PLOG_NOTICE, "[%s]",                              STR2STR(wp->config->name));
-		plog(PLOG_NOTICE, "\tuser = %s",                       STR2STR(wp->config->user));
-		plog(PLOG_NOTICE, "\tgroup = %s",                      STR2STR(wp->config->group));
-		plog(PLOG_NOTICE, "\tlisten = %s",                     STR2STR(wp->config->listen_address));
-		plog(PLOG_NOTICE, "\tlisten.backlog = %d",             wp->config->listen_backlog);
+		plog(PLOG_NOTICE, "\t\tuser = %s",                       STR2STR(wp->config->user));
+		plog(PLOG_NOTICE, "\t\tgroup = %s",                      STR2STR(wp->config->group));
+		plog(PLOG_NOTICE, "\t\tlisten = %s",                     STR2STR(wp->config->listen_address));
+		plog(PLOG_NOTICE, "\t\tlisten.backlog = %d",             wp->config->listen_backlog);
 		if (wp->config->process_priority == 64) {
-			plog(PLOG_NOTICE, "\tprocess.priority = undefined");
+			plog(PLOG_NOTICE, "\t\tprocess.priority = undefined");
 		} else {
-			plog(PLOG_NOTICE, "\tprocess.priority = %d", wp->config->process_priority);
+			plog(PLOG_NOTICE, "\t\tprocess.priority = %d", wp->config->process_priority);
 		}
-		plog(PLOG_NOTICE, "\tprocess.dumpable = %s",           BOOL2STR(wp->config->process_dumpable));
-		plog(PLOG_NOTICE, "\tpm = %s",                         PM2STR(wp->config->pm_type));
-		plog(PLOG_NOTICE, "\tpm.max_children = %d",            wp->config->pm_max_children);
-		plog(PLOG_NOTICE, "\tpm.start_servers = %d",           wp->config->pm_start_servers);
-		plog(PLOG_NOTICE, "\tpm.min_spare_servers = %d",       wp->config->pm_min_spare_servers);
-		plog(PLOG_NOTICE, "\tpm.max_spare_servers = %d",       wp->config->pm_max_spare_servers);
-		plog(PLOG_NOTICE, "\tpm.process_idle_timeout = %d",    wp->config->pm_process_idle_timeout);
-		plog(PLOG_NOTICE, "\tpm.max_requests = %d",            wp->config->pm_max_requests);
+		plog(PLOG_NOTICE, "\t\tprocess.dumpable = %s",           BOOL2STR(wp->config->process_dumpable));
+		plog(PLOG_NOTICE, "\t\tpm = %s",                         PM2STR(wp->config->pm_type));
+		plog(PLOG_NOTICE, "\t\tpm.max_children = %d",            wp->config->pm_max_children);
+		plog(PLOG_NOTICE, "\t\tpm.start_servers = %d",           wp->config->pm_start_servers);
+		plog(PLOG_NOTICE, "\t\tpm.min_spare_servers = %d",       wp->config->pm_min_spare_servers);
+		plog(PLOG_NOTICE, "\t\tpm.max_spare_servers = %d",       wp->config->pm_max_spare_servers);
+		plog(PLOG_NOTICE, "\t\tpm.process_idle_timeout = %d",    wp->config->pm_process_idle_timeout);
+		plog(PLOG_NOTICE, "\t\tpm.max_requests = %d",            wp->config->pm_max_requests);
 	}
 }
 
@@ -566,10 +567,111 @@ int pmf_conf_unlink_pid() {
 	return 0;
 }
 
+static int pmf_conf_process_all_pools() {
+	PMF_WORKER_POOL_S *wp;
+
+	if (NULL == pmf_worker_all_pools) {
+		plog(PLOG_ERROR, "No pool defined. at least one pool section must be specified in config file");
+		return -1;
+	}
+
+	for (wp = pmf_worker_all_pools; wp; wp = wp->next) {
+		/* check listen addr */
+		if (wp->config->listen_address && *wp->config->listen_address) {
+			wp->listen_address_domain = pmf_sockets_domain_from_address(wp->config->listen_address);
+
+			if (wp->listen_address_domain == PMF_AF_UNIX && *wp->config->listen_address != '/') {
+				plog(PLOG_ERROR, "[pool %s] listen unix path must be absolute path!", wp->config->name);
+				return -1;
+			}
+		} else {
+			plog(PLOG_ALERT, "[pool %s] no listen address have been defined!", wp->config->name);
+			return -1;
+		}
+
+		if (wp->config->process_priority != 64 && (wp->config->process_priority < -19 || wp->config->process_priority > 20)) {
+			plog(PLOG_ERROR, "[pool %s] process.priority must be included into [-19,20]", wp->config->name);
+			return -1;
+		}
+
+		/* pm */
+		if (wp->config->pm_type != PM_STYLE_STATIC && wp->config->pm_type != PM_STYLE_DYNAMIC && wp->config->pm_type != PM_STYLE_ONDEMAND) {
+			plog(PLOG_ALERT, "[pool %s] the process manager is missing (static, dynamic or ondemand)", wp->config->name);
+			return -1;
+		}
+
+		/* pm.max_children */
+		if (wp->config->pm_max_children < 1) {
+			plog(PLOG_ALERT, "[pool %s] pm.max_children must be a positive value", wp->config->name);
+			return -1;
+		}
+
+		/* pm.start_servers, pm.min_spare_servers, pm.max_spare_servers */
+		if (wp->config->pm_type == PM_STYLE_DYNAMIC) {
+			PMF_WORKER_POOL_CONFIG_S *config = wp->config;
+
+			if (config->pm_min_spare_servers <= 0) {
+				plog(PLOG_ALERT, "[pool %s] pm.min_spare_servers(%d) must be a positive value", wp->config->name, config->pm_min_spare_servers);
+				return -1;
+			}
+
+			if (config->pm_max_spare_servers <= 0) {
+				plog(PLOG_ALERT, "[pool %s] pm.max_spare_servers(%d) must be a positive value", wp->config->name, config->pm_max_spare_servers);
+				return -1;
+			}
+
+			if (config->pm_min_spare_servers > config->pm_max_children ||
+					config->pm_max_spare_servers > config->pm_max_children) {
+				plog(PLOG_ALERT, "[pool %s] pm.min_spare_servers(%d) and pm.max_spare_servers(%d) cannot be greater than pm.max_children(%d)", wp->config->name, config->pm_min_spare_servers, config->pm_max_spare_servers, config->pm_max_children);
+				return -1;
+			}
+
+			if (config->pm_max_spare_servers < config->pm_min_spare_servers) {
+				plog(PLOG_ALERT, "[pool %s] pm.max_spare_servers(%d) must not be less than pm.min_spare_servers(%d)", wp->config->name, config->pm_max_spare_servers, config->pm_min_spare_servers);
+				return -1;
+			}
+
+			if (config->pm_start_servers <= 0) {
+				config->pm_start_servers = config->pm_min_spare_servers + ((config->pm_max_spare_servers - config->pm_min_spare_servers) / 2);
+				plog(PLOG_NOTICE, "[pool %s] pm.start_servers is not set. It's been set to %d.", wp->config->name, config->pm_start_servers);
+
+			} else if (config->pm_start_servers < config->pm_min_spare_servers || config->pm_start_servers > config->pm_max_spare_servers) {
+				plog(PLOG_ALERT, "[pool %s] pm.start_servers(%d) must not be less than pm.min_spare_servers(%d) and not greater than pm.max_spare_servers(%d)", wp->config->name, config->pm_start_servers, config->pm_min_spare_servers, config->pm_max_spare_servers);
+				return -1;
+			}
+		} else if (wp->config->pm_type == PM_STYLE_ONDEMAND) {
+			PMF_WORKER_POOL_CONFIG_S *config = wp->config;
+
+			if (!pmf_event_support_edge_trigger()) {
+				plog(PLOG_ALERT, "[pool %s] ondemand process manager can ONLY be used when events.mechanisme is epoll (Linux).", wp->config->name);
+				return -1;
+			}
+
+			if (config->pm_process_idle_timeout < 1) {
+				plog(PLOG_ALERT, "[pool %s] pm.process_idle_timeout(%ds) must be greater than 0s", wp->config->name, config->pm_process_idle_timeout);
+				return -1;
+			}
+
+			if (config->listen_backlog < PMF_BACKLOG_DEFAULT) {
+				plog(PLOG_WARNING, "[pool %s] listen.backlog(%d) was too low for the ondemand process manager. I updated it for you to %d.", wp->config->name, config->listen_backlog, PMF_BACKLOG_DEFAULT);
+				config->listen_backlog = PMF_BACKLOG_DEFAULT;
+			}
+
+			/* certainely useless but proper */
+			config->pm_start_servers = 0;
+			config->pm_min_spare_servers = 0;
+			config->pm_max_spare_servers = 0;
+		}
+	}
+
+	return 0;
+}
+
 static int pmf_conf_proc_config() {
 	pmf_globals.log_level = pmf_global_config.log_level;
 	plog_set_level(pmf_globals.log_level);
 
+	/* parse pool config */
 	if (NULL != pmf_global_config.include_dir &&
 		pmf_conf_is_dir(pmf_global_config.include_dir) &&
 		0 > pmf_conf_parse_pool_config(pmf_global_config.include_dir)) {
@@ -582,7 +684,7 @@ static int pmf_conf_proc_config() {
 		return -1;
 	}
 
-	if (pmf_global_config.process_priority != 64 && 
+	if (pmf_global_config.process_priority != 64 &&
 		(pmf_global_config.process_priority < -19 || pmf_global_config.process_priority > 20)) {
 		plog(PLOG_ERROR, "process.priority must be included into [-19,20]");
 		return -1;
@@ -600,7 +702,7 @@ static int pmf_conf_proc_config() {
 		return -1;
 	}
 
-	return -1;
+	return 0;
 }
 
 int pmf_conf_init_main() {
@@ -617,6 +719,9 @@ int pmf_conf_init_main() {
 		return -1;
 	}
 
+	if (0 > pmf_conf_process_all_pools()) {
+		return -1;
+	}
 	pmf_conf_dump();
 	return ret;
 }

@@ -4,6 +4,7 @@
 #include "pmf_conf.h"
 #include "pmf_stdio.h"
 #include "pmf_log.h"
+#include "pmf_unix.h"
 
 PMF_GLOBAL_S pmf_globals = {
 	.parent_pid = 0,
@@ -16,7 +17,8 @@ PMF_GLOBAL_S pmf_globals = {
 
 int pmf_init() {
 	if (0 > pmf_stdio_init_main() ||
-		0 > pmf_conf_init_main()) {
+		0 > pmf_conf_init_main() ||
+		0 > pmf_unix_init_main()) {
 
 		plog(PLOG_ERROR, "PMF initialization failed");
 		return -1;
