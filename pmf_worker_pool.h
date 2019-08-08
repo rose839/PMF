@@ -18,7 +18,7 @@ typedef struct _pmf_worker_pool_s {
 	PMF_ADDRESS_DOMAIN_E listen_address_domain;
 	char *user, *home;
 	int set_uid, set_gid; // config uid and gid
-	int socket_uid, socket_gid, socket_mode;
+	int socket_uid, socket_gid, socket_mode; // for unix socket
 
 	/* run time */
 	int running_children_num;

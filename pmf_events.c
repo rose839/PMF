@@ -42,3 +42,37 @@ int pmf_event_pre_init(const char *mechanism) {
 	return -1;
 }
 
+int pmf_event_init_main() {
+	PMF_WORKER_POOL_S *wp;
+	int max;
+
+	if (!pmf_event_module) {
+		plog(PLOG_ERROR, "no event module found");
+		return -1;
+	}
+
+	if (!pmf_event_module->wait) {
+		plog(PLOG_ERROR, "Incomplete event implementation. ");
+		return -1;
+	}
+
+	/* count the max number of necessary fds for polling */
+	max = 1; /* only one FD is necessary at startup for the master process signal pipe */
+	for (wp = pmf_worker_all_pools; wp; wp = wp->next) {
+		if (!wp->config) continue;
+		if (wp->config->pm_max_children > 0) {
+			max += (wp->config->pm_max_children * 2);
+		}
+	}
+
+	if (pmf_event_module->init(max) < 0) {
+		plog(PLOG_ERROR, "Unable to initialize the event module %s", module->name);
+		return -1;
+	}
+
+	plog(PLOG_DEBUG, "event module is %s and %d fds have been reserved", module->name, max);
+
+	return 0;
+}
+
+

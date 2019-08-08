@@ -37,5 +37,6 @@ typedef struct _pmf_event_module_s {
 extern int pmf_event_pre_init(const char *mechanism);
 extern void pmf_event_proc(PMF_EVENT_S *ev);
 extern int pmf_event_support_edge_trigger();
+extern int pmf_event_init_main();
 
 #endif

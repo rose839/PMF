@@ -73,6 +73,58 @@ static int pmf_unix_conf_wp(PMF_WORKER_POOL_S *wp) {
 	return 0;
 }
 
+int pmf_unix_set_socket_premissions(PMF_WORKER_POOL_S *wp, const char *path) {
+	if (wp->socket_uid != -1 || wp->socket_gid != -1) {
+		if (0 > chown(path, wp->socket_uid, wp->socket_gid)) {
+			plog(PLOG_SYSERROR, "[pool %s] failed to chown() the socket '%s'", wp->config->name, wp->config->listen_address);
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int pmf_unix_resolve_socket_premissions(PMF_WORKER_POOL_S *wp) {
+	PMF_WORKER_POOL_CONFIG_S *c = wp->config;
+
+	wp->socket_uid = -1;
+	wp->socket_gid = -1;
+	wp->socket_mode = 0660;
+
+	if (!c) {
+		return 0;
+	}
+
+	if (c->listen_mode && *c->listen_mode) {
+		wp->socket_mode = strtoul(c->listen_mode, 0, 8);
+	}
+
+	if (c->listen_owner && *c->listen_owner) {
+		struct passwd *pwd;
+
+		pwd = getpwnam(c->listen_owner);
+		if (!pwd) {
+			plog(PLOG_SYSERROR, "[pool %s] cannot get uid for user '%s'", wp->config->name, c->listen_owner);
+			return -1;
+		}
+
+		wp->socket_uid = pwd->pw_uid;
+		wp->socket_gid = pwd->pw_gid;
+	}
+
+	if (c->listen_group && *c->listen_group) {
+		struct group *grp;
+
+		grp = getgrnam(c->listen_group);
+		if (!grp) {
+			plog(PLOG_SYSERROR, "[pool %s] cannot get gid for group '%s'", wp->config->name, c->listen_group);
+			return -1;
+		}
+		wp->socket_gid = grp->gr_gid;
+	}
+
+	return 0;
+}
+
 int pmf_unix_init_main() {
 	PMF_WORKER_POOL_S *wp;
 	struct rlimit r;
