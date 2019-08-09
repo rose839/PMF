@@ -1,9 +1,40 @@
 #include <signal.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "pmf_log.h"
 #include "pmf_signals.h"
+#include "pmf.h"
+#include "pmf_sockets.h"
 
 static int sp[2];
 
+static void sig_handler(int signo) {
+	static const char sig_chars[NSIG + 1] = {
+		[SIGTERM] = 'T',
+		[SIGINT]  = 'I',
+		[SIGUSR1] = '1',
+		[SIGUSR2] = '2',
+		[SIGQUIT] = 'Q',
+		[SIGCHLD] = 'C'
+	};
+	char s;
+	int saved_errno;
+
+	if (pmf_globals.parent_pid != getpid()) {
+		/* prevent a signal race condition when child process
+			have not set up it's own signal handler yet */
+		return;
+	}
+
+	saved_errno = errno;
+	s = sig_chars[signo];
+	plog_quiet_write(sp[1], &s, sizeof(s));
+	errno = saved_errno;
+}
 
 int pmf_signals_init_main() {
 	struct sigaction act;
@@ -39,3 +70,4 @@ int pmf_signals_init_main() {
 	}
 	return 0;
 }
+

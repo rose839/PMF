@@ -1,8 +1,11 @@
 #include "string.h"
 #include "pmf_scoreboard.h"
 #include "pmf_atomic.h"
+#include "pmf_log.h"
+#include "pmf_worker_pool.h"
+#include "pmf_shm.h"
 
-static struct PMF_SCOREBOARD_S *pmf_scoreboard = NULL;
+static PMF_SCOREBOARD_S *pmf_scoreboard = NULL;
 static int pmf_scoreboard_i = -1;
 
 void pmf_scoreboard_update(int idle, int active, int lq, int lq_len, int requests, int max_children_reached, int slow_rq, int action, PMF_SCOREBOARD_S *scoreboard) {
@@ -115,9 +118,9 @@ int pmf_scoreboard_init_main() {
 			wp->scoreboard->procs[i] = shm_mem;
 		}
 
-		wp->scoreboard->pm          = wp->config->pm;
+		wp->scoreboard->pm          = wp->config->pm_type;
 		wp->scoreboard->start_epoch = time(NULL);
-		strlcpy(wp->scoreboard->pool, wp->config->name, sizeof(wp->scoreboard->pool));
+		strncpy(wp->scoreboard->pool, wp->config->name, sizeof(wp->scoreboard->pool));
 	}
 }
 

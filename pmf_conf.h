@@ -34,6 +34,12 @@ typedef struct _pmf_worker_pool_config_s {
 	char *user;
 	char *group;
 	char *listen_address;
+
+	/* for unix socket */
+	char *listen_owner;
+	char *listen_group;
+	char *listen_mode;
+	
 	int listen_backlog;
 	int process_priority;
 	int process_dumpable;

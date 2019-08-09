@@ -84,7 +84,7 @@ static inline void *pmf_array_push(PMF_ARRAY_S *array) {
 	}
 	
 	ret = pmf_array_item(array, array->used_num);
-	++array->used;
+	++array->used_num;
 
 	return ret;
 }

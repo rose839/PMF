@@ -2,6 +2,9 @@
 #define PMF_SOCKET_H
 
 #include "pmf_worker_pool.h"
+#include <unistd.h>
+#include <fcntl.h>
+
 
 #define PMF_BACKLOG_DEFAULT 511
 

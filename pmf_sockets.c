@@ -1,11 +1,18 @@
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <netdb.h>
 #include <string.h>
 #include <netinet/tcp.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "pmf_worker_pool.h"
 #include "pmf_array.h"
 #include "pmf_unix.h"
+#include "pmf_log.h"
+#include "pmf_scoreboard.h"
 
 struct listening_socket_s {
 	int refcount;
@@ -56,7 +63,7 @@ static int pmf_sockets_hash_op(int sock, struct sockaddr *sa, char *key, int typ
 				}
 				key_need_free = true;
 				inet_ntop(sa->sa_family, pmf_get_in_addr(sa), key, INET6_ADDRSTRLEN);
-				sprintf(key+strlen(key), ":%d", fpm_get_in_port(sa));
+				sprintf(key+strlen(key), ":%d", pmf_get_in_port(sa));
 				break;
 			}
 
@@ -82,7 +89,7 @@ static int pmf_sockets_hash_op(int sock, struct sockaddr *sa, char *key, int typ
 			unsigned i;
 			struct listening_socket_s *ls = sockets_list.data;
 
-			for (i = 0; i < sockets_list.used; i++, ls++) {
+			for (i = 0; i < sockets_list.used_num; i++, ls++) {
 				if (!strcmp(ls->key, key)) {
 					++ls->refcount;
 					ret_sock = ls->sock;
@@ -301,7 +308,7 @@ static int pmf_socket_af_unix_listening_socket(PMF_WORKER_POOL_S *wp) {
 	struct sockaddr_un sa_un;
 
 	memset(&sa_un, 0, sizeof(sa_un));
-	strlcpy(sa_un.sun_path, wp->config->listen_address, sizeof(sa_un.sun_path));
+	strncpy(sa_un.sun_path, wp->config->listen_address, sizeof(sa_un.sun_path));
 	sa_un.sun_family = AF_UNIX;
 	return pmf_sockets_get_listening_socket(wp, (struct sockaddr *) &sa_un, sizeof(struct sockaddr_un));
 }
@@ -366,7 +373,7 @@ int pmf_sockets_init_main() {
 	/* close unused sockets that was inherited */
 	ls = sockets_list.data;
 
-	for (i = 0; i < sockets_list.used; ) {
+	for (i = 0; i < sockets_list.used_num; ) {
 		if (ls->refcount == 0) {
 			close(ls->sock);
 			if (ls->type == PMF_AF_UNIX) {

@@ -1,7 +1,8 @@
-#include "pmf_events.h"
-#include "pmf_log.h"
 #include "epoll.h"
 #include "select.h"
+#include "pmf_events.h"
+#include "pmf_log.h"
+#include "pmf_worker_pool.h"
 
 static PMF_EVENT_MODULE_S *pmf_event_module;
 
@@ -66,11 +67,11 @@ int pmf_event_init_main() {
 	}
 
 	if (pmf_event_module->init(max) < 0) {
-		plog(PLOG_ERROR, "Unable to initialize the event module %s", module->name);
+		plog(PLOG_ERROR, "Unable to initialize the event module %s", pmf_event_module->name);
 		return -1;
 	}
 
-	plog(PLOG_DEBUG, "event module is %s and %d fds have been reserved", module->name, max);
+	plog(PLOG_DEBUG, "event module is %s and %d fds have been reserved", pmf_event_module->name, max);
 
 	return 0;
 }

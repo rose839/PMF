@@ -1,6 +1,9 @@
 #ifndef PMF_SCOREBOARD_H
 #define PMF_SCOREBOARD_H
 
+#include <sys/time.h>
+#include "pmf_atomic.h"
+
 typedef struct _pmf_scoreboard_proc_s {
 	union {
 		atomic_t lock;

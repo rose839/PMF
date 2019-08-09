@@ -4,6 +4,9 @@
 
 #include <sys/types.h>
 #include <unistd.h>
+#include "pmf_worker_pool.h"
+
+typedef struct _pmf_worker_pool_s PMF_WORKER_POOL_S;
 
 typedef struct _pmf_child_s {
 	struct _pmf_child_s *prev, *next;

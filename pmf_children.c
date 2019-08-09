@@ -1,4 +1,6 @@
-
+#include <stdlib.h>
+#include <string.h>
+#include "pmf_conf.h"
 
 static time_t *last_faults;
 

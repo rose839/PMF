@@ -2,10 +2,11 @@
 #include <errno.h>
 #include <string.h>
 #include "pmf_shm.h"
+#include "pmf_log.h"
 
 static size_t pmf_shm_size = 0;
 
-int pmf_shm_alloc(size_t size) {
+void *pmf_shm_alloc(size_t size) {
 	void *mem;
 
 	mem = mmap(0, size, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_SHARED, -1, 0);
